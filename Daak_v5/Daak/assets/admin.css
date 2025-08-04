@@ -1,0 +1,217 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f8fafc;
+    margin: 0;
+}
+.admin-navbar {
+    background: #be3144;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+    font-size: 1.2em;
+}
+.admin-container {
+    display: flex;
+    min-height: 90vh;
+}
+.admin-sidebar {
+    width: 220px;
+    background: #1d1f20;
+    color: #fff;
+    min-height: 100vh;
+    padding-top: 2em;
+}
+.admin-sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+.admin-sidebar .nav-link {
+    padding: 1em 2em;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    transition: background 0.2s, border 0.2s;
+}
+.admin-sidebar .nav-link.active {
+    background: #292b2f;
+    border-left: 4px solid #be3144;
+}
+.admin-sidebar .nav-link:hover {
+    background: #232426;
+}
+.admin-main {
+    flex: 1;
+    padding: 2em;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+/* ======= Reports Table Styles ======= */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 1em;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.admin-table th, .admin-table td {
+    padding: 0.6em 0.5em;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+.admin-table th {
+    background: #be3144;
+    color: #fff;
+}
+.admin-table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+.admin-table button {
+    background: #be3144;
+    color: #fff;
+    border: none;
+    padding: 0.35em 0.7em;
+    margin: 0 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background 0.2s;
+}
+.admin-table button:hover {
+    background: #8b222e;
+}
+
+/* ===== Modal Styles ===== */
+.modal {
+  position: fixed;
+  z-index: 99;
+  left: 0; top: 0;
+  width: 100vw; height: 100vh;
+  overflow: auto;
+  background: rgba(0,0,0,0.3);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2em 1.5em 1em 1.5em;
+  max-width: 430px;
+  width: 95vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.23);
+  position: relative;
+  animation: fadeIn 0.2s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.close {
+  color: #be3144;
+  font-size: 2em;
+  position: absolute;
+  right: 24px; top: 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+#modalReportContent img,
+#modalReportContent video,
+#modalReportContent audio {
+  max-width: 100%;
+  margin-top: 1em;
+  border-radius: 8px;
+}
+@media (max-width: 700px) {
+  .modal-content { padding: 1em 0.3em; max-width: 98vw; }
+  .close { right: 10px; top: 7px; font-size: 1.6em; }
+}
+
+/* ----- MOBILE STYLES ----- */
+@media (max-width: 700px) {
+    .admin-container {
+        flex-direction: column;
+    }
+    .admin-sidebar {
+        width: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: row;
+        padding-top: 0;
+        background: #1d1f20;
+    }
+    .admin-sidebar ul {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+    }
+    .admin-sidebar .nav-link {
+        flex: 1;
+        padding: 1em 0.5em;
+        text-align: center;
+        font-size: 1em;
+        border-left: none;
+        border-bottom: 4px solid transparent;
+    }
+    .admin-sidebar .nav-link.active {
+        background: #292b2f;
+        border-left: none;
+        border-bottom: 4px solid #be3144;
+    }
+    .admin-main {
+        padding: 1em;
+    }
+    .admin-navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .admin-table th, .admin-table td {
+        font-size: 0.85em;
+        padding: 0.4em 0.2em;
+    }
+    .admin-table th, .admin-table td {
+        white-space: normal;
+        word-break: break-word;
+    }
+    .admin-table {
+        font-size: 0.93em;
+    }
+}
+
+#bulkVerifyBtn, #bulkDeleteBtn {
+  cursor: pointer;
+}
+
+/* ======= Dashboard Cards Styles ======= */
+#dashboard-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5em;
+  margin-top: 1em;
+}
+.dash-card {
+  background: #fff;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+  border-radius: 16px;
+  min-width: 120px;
+  flex: 1;
+  padding: 1.2em 1.3em;
+  text-align: center;
+  margin: 0.3em 0;
+}
+.dash-card h2 {
+  margin: 0 0 0.2em 0;
+  font-size: 2.2em;
+  color: #be3144;
+  font-weight: 700;
+}
+.dash-card span {
+  font-size: 1em;
+  color: #444;
+  font-weight: 500;
+}
+@media (max-width: 700px) {
+  #dashboard-cards {
+    flex-direction: column;
+    gap: 1em;
+  }
+}

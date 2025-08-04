@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emergency Contacts | Daak</title>
+  <link rel="stylesheet" href="assets/style-consistent.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('assets/images/daak-bg.png') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding-top: 60px;
+    }
+
+    .card {
+      background: linear-gradient(160deg, rgba(183,28,28,0.5), rgba(27,94,32,0.5));
+      backdrop-filter: blur(15px);
+      padding: 2rem;
+      border-radius: 25px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 500px;
+      color: white;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.7rem;
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .contact-row input[type="email"] {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 10px;
+      border: 1px solid white;
+      background-color: transparent;
+      color: white;
+    }
+
+    .contact-row input::placeholder {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .contact-row button {
+      background-color: #2196F3;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .contact-row button:hover {
+      background-color: #1976D2;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      color: #ffffffaa;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Emergency Contacts</h2>
+
+    <div id="contactsContainer">
+      <!-- Contact inputs will be injected here -->
+    </div>
+
+    <p id="statusMessage" style="margin-top: 1rem;"></p>
+  </div>
+
+  <div class="footer">Made with ❤️ by Team Asparagus</div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let uid = null;
+    let contacts = [];
+
+    const container = document.getElementById("contactsContainer");
+    const statusMessage = document.getElementById("statusMessage");
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        uid = user.uid;
+        loadContacts();
+      }
+    });
+
+    function loadContacts() {
+      db.collection("users").doc(uid).get().then(doc => {
+        contacts = doc.data().emergencyContacts || ["", "", ""];
+        while (contacts.length < 3) contacts.push("");
+        renderInputs();
+      });
+    }
+
+    function renderInputs() {
+      container.innerHTML = "";
+      contacts.forEach((email, index) => {
+        const row = document.createElement("div");
+        row.className = "contact-row";
+        row.innerHTML = `
+          <input type="email" id="email_${index}" value="${email}" placeholder="Enter contact email">
+          <button onclick="updateContact(${index})">Update</button>
+          <button onclick="removeContact(${index})" style="background-color:red;">Remove</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function updateContact(index) {
+      const input = document.getElementById("email_" + index).value.trim();
+      if (!input) {
+        statusMessage.innerText = "Please enter a valid email.";
+        return;
+      }
+      contacts[index] = input;
+      saveContacts();
+    }
+
+    function removeContact(index) {
+      contacts[index] = "";
+      saveContacts();
+    }
+
+    function saveContacts() {
+      db.collection("users").doc(uid).update({
+        emergencyContacts: contacts
+      }).then(() => {
+        statusMessage.innerText = "Contacts updated.";
+        renderInputs();
+      }).catch(error => {
+        statusMessage.innerText = "Error: " + error.message;
+      });
+    }
+  </script>
+</body>
+</html>

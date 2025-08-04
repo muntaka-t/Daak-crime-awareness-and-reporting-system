@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Distress Signal | Daak</title>
+  <link rel="stylesheet" href="assets/style-consistent.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background: url("assets/images/daak-bg.png") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      position: relative;
+      background: linear-gradient(160deg, rgba(183,28,28,0.6), rgba(27,94,32,0.6));
+      backdrop-filter: blur(15px);
+      padding: 40px 30px;
+      border-radius: 25px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      color: white;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-25deg);
+      transition: 1s ease;
+    }
+    .card:hover::before {
+      left: 125%;
+    }
+    .panic-button {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: red;
+      box-shadow: 0 0 30px red;
+      border: none;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .panic-button:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 50px red;
+    }
+    .countdown {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: yellow;
+    }
+    .cancel-button {
+      margin-top: 10px;
+      background-color: white;
+      color: red;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      display: none;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body>
+  <div class="card">
+    <h2>Hold if in Panic</h2>
+    <button class="panic-button" id="panicBtn">HOLD</button>
+    <div id="countdown" class="countdown"></div>
+    <button id="cancelBtn" class="cancel-button">Cancel</button>
+  </div>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBfrWbGB9cHu2ViYwhfFfYsxRi1NG8e2P8",
+      authDomain: "daak-app.firebaseapp.com",
+      projectId: "daak-app",
+      storageBucket: "daak-app.appspot.com",
+      messagingSenderId: "Y535089953659",
+      appId: "1:535089953659:web:30e0f7e701d08c61805bde"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    emailjs.init("J6qtBxUVyUzumDbBQ");
+
+    let countdownTimer;
+    let isHolding = false;
+    const panicBtn = document.getElementById('panicBtn');
+    const countdown = document.getElementById('countdown');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    panicBtn.addEventListener('mousedown', () => {
+      isHolding = true;
+      countdown.textContent = "Holding...";
+    });
+    panicBtn.addEventListener('mouseup', () => {
+      if (!isHolding) return;
+      isHolding = false;
+      startCountdown();
+    });
+    panicBtn.addEventListener('mouseleave', () => {
+      if (isHolding) {
+        isHolding = false;
+        startCountdown();
+      }
+    });
+    cancelBtn.addEventListener('click', () => {
+      clearInterval(countdownTimer);
+      countdown.textContent = "Cancelled.";
+      cancelBtn.style.display = 'none';
+    });
+
+    function startCountdown() {
+      let seconds = 5;
+      countdown.textContent = "Releasing in " + seconds + "s...";
+      cancelBtn.style.display = 'inline-block';
+      countdownTimer = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(countdownTimer);
+          countdown.textContent = "🚨 Panic Activated!";
+          cancelBtn.style.display = 'none';
+          triggerPanicAction();
+        } else {
+          countdown.textContent = "Releasing in " + seconds + "s...";
+        }
+      }, 1000);
+    }
+
+    function triggerPanicAction() {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Not logged in!");
+        return;
+      }
+      db.collection("users").doc(user.uid).get().then(doc => {
+        const userData = doc.data();
+        const name = userData.fullName;
+        const contacts = userData.emergencyContacts.filter(c => c);
+        navigator.geolocation.getCurrentPosition(pos => {
+          const { latitude, longitude } = pos.coords;
+          contacts.forEach(to => sendPanicEmail(to, name, latitude, longitude));
+        }, () => {
+          contacts.forEach(to => sendPanicEmail(to, name, "Unavailable", "Unavailable"));
+        });
+      });
+    }
+
+    function sendPanicEmail(to_email, name, lat, lng) {
+  const locationLink = `https://www.google.com/maps?q=${lat},${lng}`;
+  const params = {
+    to_email,
+    user_name: name,
+    location_link: locationLink,
+    timestamp: new Date().toLocaleString()
+  };
+
+  emailjs.send('service_z3xtxe5', 'template_8hunv1r', params)
+    .then(r => {
+      console.log("✅ Email sent", r);
+      alert("Panic email sent!");
+    })
+    .catch(e => {
+      console.error("❌ Failed", e);
+      alert("Failed to send panic email.");
+    });
+}
+
+  </script>
+</body>
+</html>

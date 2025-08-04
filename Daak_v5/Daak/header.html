@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daak Header</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <style>
+    .glass-header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+    .header-logo {
+      height: 32px;
+      margin-right: 0.5rem;
+    }
+    .daak-title {
+      font-family: 'Noto Serif Bengali', serif;
+      font-size: 1.5rem;
+      color: white;
+      font-weight: bold;
+    }
+    .glass-header .header-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.5rem 1rem;
+      margin: 0 0.3rem;
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .glass-header .header-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
+    .glass-header .left,
+    .glass-header .center,
+    .glass-header .right {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <header class="glass-header">
+    <div class="left">
+      <img src="assets/images/logo.png" alt="Daak Logo" class="header-logo" />
+      <span class="daak-title">ডাক</span>
+    </div>
+
+    <div class="center">
+      <button onclick="history.back()" class="header-btn">← Back</button>
+      <a href="home.html" class="header-btn">Home</a>
+      <a href="distress.html" class="header-btn">🚨 Distress</a>
+    </div>
+
+    <div class="right">
+      <a href="signup.html" class="header-btn" id="signupOrLogoutBtn">Sign Up</a>
+    </div>
+  </header>
+
+  <script>
+    // Replace with your actual Firebase config or include from your main app script
+    const firebaseConfig = {};
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    firebase.auth().onAuthStateChanged(user => {
+      const btn = document.getElementById("signupOrLogoutBtn");
+      if (user) {
+        btn.textContent = "Log Out";
+        btn.href = "#";
+        btn.onclick = function() {
+          firebase.auth().signOut().then(() => {
+            alert("Logged out successfully!");
+            window.location.href = "login.html";
+          });
+        };
+      } else {
+        btn.textContent = "Sign Up";
+        btn.href = "signup.html";
+        btn.onclick = null;
+      }
+    });
+  </script>
+</body>
+</html>

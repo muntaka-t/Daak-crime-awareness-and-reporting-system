@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crime Heatmap | Daak</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    #map {
+      height: calc(100% - 60px);
+      width: 100%;
+    }
+    #controls {
+      padding: 0.5rem;
+      background: white;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    select, button {
+      padding: 0.4rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <label for="crimeFilter">Crime:</label>
+  <select id="crimeFilter">
+    <option value="all">All Crimes</option>
+    <option value="Robbery">Robbery</option>
+    <option value="Theft">Theft</option>
+    <option value="Assault">Assault</option>
+    <option value="Harassment">Harassment</option>
+    <option value="Murder">Murder</option>
+    <option value="Pickpocketing">Pickpocketing</option>
+  </select>
+
+  <label for="timeFilter">Time:</label>
+  <select id="timeFilter">
+    <option value="all">All Time</option>
+    <option value="today">Today</option>
+    <option value="7">Last 7 Days</option>
+    <option value="30">Last 30 Days</option>
+  </select>
+
+  <button id="locateMeBtn">📍 Locate Me</button>
+</div>
+
+<div id="map"></div>
+
+<!-- Leaflet and plugins -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+
+<script>
+const db = firebase.firestore();
+let heatLayer = null;
+let allPoints = [];
+
+
+const map = L.map('map').setView([23.8103, 90.4125], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+let markersLayer = L.layerGroup().addTo(map); // clickable markers
+
+// Add geocoder (search bar)
+L.Control.geocoder().addTo(map);
+
+// Add Locate Me button
+document.getElementById("locateMeBtn").addEventListener("click", () => {
+  if (!navigator.geolocation) return alert("Geolocation not supported");
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude, longitude } = pos.coords;
+    L.marker([latitude, longitude]).addTo(map);
+    map.setView([latitude, longitude], 15);
+  });
+});
+
+function renderHeatmap(points) {
+  if (heatLayer) map.removeLayer(heatLayer);
+  heatLayer = L.heatLayer(points, { radius: 25 }).addTo(map);
+}
+
+function renderClickableMarkers(filteredReports) {
+  markersLayer.clearLayers();
+
+  filteredReports.forEach(report => {
+    const marker = L.circleMarker([report.lat, report.lng], {
+    radius: 25,
+    color: "transparent",
+    fillColor: "transparent",
+    fillOpacity: 0,
+    weight: 0
+  });
+
+
+    const time = new Date(report.timestamp).toLocaleString();
+    const popupContent = `
+      <strong>${report.crimeType}</strong><br/>
+      ${report.region || 'Unknown Area'}<br/>
+      ${time}<br/>
+      <a href="report-detail.html?id=${report.id}">View Details</a>
+    `;
+
+    marker.bindPopup(popupContent);
+    markersLayer.addLayer(marker);
+  });
+}
+
+function filterPoints(type, days) {
+  const now = new Date();
+  return allPoints.filter(p => {
+    if (type !== "all" && p.crimeType !== type) return false;
+    if (days === "today") {
+      return new Date(p.timestamp).toDateString() === now.toDateString();
+    }
+    if (!isNaN(days)) {
+      const past = new Date();
+      past.setDate(now.getDate() - parseInt(days));
+      return p.timestamp >= past;
+    }
+    return true;
+  });
+}
+
+function updateHeatmap() {
+  const type = document.getElementById("crimeFilter").value;
+  const time = document.getElementById("timeFilter").value;
+  const filtered = filterPoints(type, time);
+  const heatData = filtered.map(p => [p.lat, p.lng, 1]);
+  renderHeatmap(heatData);
+  renderClickableMarkers(filtered);
+}
+
+function loadReports() {
+  db.collection("reports").get().then(snapshot => {
+    allPoints = snapshot.docs.map(doc => {
+      const d = doc.data();
+      if (d.latitude && d.longitude && d.timestamp) {
+        return {
+          id: doc.id,
+          lat: d.latitude,
+          lng: d.longitude,
+          timestamp: new Date(d.timestamp.seconds * 1000),
+          crimeType: d.crimeType || "Unknown",
+          region: d.region || ""
+        };
+      }
+      return null;
+    }).filter(Boolean);
+    updateHeatmap();
+  });
+}
+
+document.getElementById("crimeFilter").addEventListener("change", updateHeatmap);
+document.getElementById("timeFilter").addEventListener("change", updateHeatmap);
+
+loadReports();
+</script>
+
+</body>
+</html>

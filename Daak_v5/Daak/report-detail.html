@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Report Details | Daak</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+    }
+    .tag {
+      background: #004aad;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      display: inline-block;
+      margin-bottom: 1rem;
+    }
+    .tag.verified {
+      background: #23a525 !important;
+    }
+    .tag.pending {
+      background: #004aad !important;
+    }
+    .tag.rejected {
+      background: #c32a2a !important;
+    }
+    .media img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+    }
+    .meta {
+      color: #555;
+      font-size: 0.9rem;
+    }
+    .tips {
+      margin-top: 2rem;
+    }
+    .tip {
+      border-top: 1px solid #eee;
+      padding: 0.75rem 0;
+    }
+    .tip p {
+      margin: 0.3rem 0;
+    }
+    .vote {
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    @media (max-width: 700px) {
+      #map {
+        height: 180px !important;
+        margin: 0.7rem 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2 id="crimeType">Loading...</h2>
+  <span class="tag" id="status">Status</span>
+
+  <p class="meta"><strong>Date & Time:</strong> <span id="datetime"></span></p>
+  <p class="meta"><strong>Location:</strong> <span id="location"></span></p>
+  <p class="meta"><strong>Reported by:</strong> <span id="reporter"></span></p>
+
+  <!-- Add this block for the map -->
+  <div id="map" style="height: 250px; width: 100%; border-radius: 8px; margin: 1rem 0; display: none;"></div>
+
+  <h3>Description</h3>
+  <p id="description"></p>
+
+  <div class="media">
+    <h3>Incident Media</h3>
+    <div id="incidentMedia"></div>
+
+    <h4>Suspect Images</h4>
+    <div id="suspectMedia"></div>
+
+    <h4>Victim Images</h4>
+    <div id="victimMedia"></div>
+  </div>
+
+  <div class="gd-section">
+    <h4>Uploaded GD</h4>
+    <div id="gdDisplay"></div>
+  </div>
+
+  <div class="tips">
+    <h3>Community Tips</h3>
+    <div id="tipsContainer">
+      <!-- Tips will be shown here -->
+    </div>
+
+    <textarea id="tipInput" placeholder="Submit a helpful tip..." rows="3" style="width:100%; margin-top:1rem;"></textarea>
+    <button onclick="submitTip()">Submit Tip</button>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+
+<!-- Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+const db = firebase.firestore();
+const params = new URLSearchParams(window.location.search);
+const reportId = params.get("id");
+let currentUser = null;
+
+function formatDate(ts) {
+  return new Date(ts.seconds * 1000).toLocaleString();
+}
+
+function renderReport(data) {
+  document.getElementById("crimeType").textContent = data.crimeType;
+  document.getElementById("description").textContent = data.description;
+  document.getElementById("datetime").textContent = formatDate(data.timestamp);
+  document.getElementById("location").textContent = `${data.streetAddress || 'Unknown'}, ${data.region || ''}`;
+  document.getElementById("reporter").textContent = data.isAnonymous ? "Anonymous" : (data.reporterName || "User");
+  const statusTag = document.getElementById("status");
+  statusTag.textContent = data.status || "Pending";
+  // Remove previous status color classes
+  statusTag.classList.remove("verified", "pending", "rejected");
+  if ((data.status || "").toLowerCase() === "verified") {
+    statusTag.classList.add("verified");
+  } else if ((data.status || "").toLowerCase() === "pending") {
+    statusTag.classList.add("pending");
+  } else if ((data.status || "").toLowerCase() === "rejected") {
+    statusTag.classList.add("rejected");
+  }
+
+  // ---- Map rendering logic ----
+  if (data.latitude && data.longitude) {
+    document.getElementById("map").style.display = "block";
+    setTimeout(() => {
+      if (window.reportDetailMap) {
+        window.reportDetailMap.remove();
+      }
+      window.reportDetailMap = L.map('map').setView([data.latitude, data.longitude], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(window.reportDetailMap);
+      L.marker([data.latitude, data.longitude]).addTo(window.reportDetailMap);
+    }, 100);
+  } else {
+    document.getElementById("map").style.display = "none";
+  }
+
+  // Backward compatibility for old single-image reports
+  if ((!data.mediaUrls || data.mediaUrls.length === 0) && data.mediaUrl) {
+    data.mediaUrls = [data.mediaUrl];
+  }
+  if ((!data.suspectImageUrls || data.suspectImageUrls.length === 0) && data.suspectImageUrl) {
+    data.suspectImageUrls = [data.suspectImageUrl];
+  }
+  if ((!data.victimImageUrls || data.victimImageUrls.length === 0) && data.victimImageUrl) {
+    data.victimImageUrls = [data.victimImageUrl];
+  }
+
+  // --- Incident Media (images, video, audio, pdf) ---
+  const incidentDiv = document.getElementById("incidentMedia");
+  incidentDiv.innerHTML = "";
+  const incidentMedia = Array.isArray(data.incidentMedia) && data.incidentMedia.length
+    ? data.incidentMedia
+    : Array.isArray(data.mediaUrls) && data.mediaUrls.length
+      ? data.mediaUrls
+      : [];
+  if (incidentMedia.length) {
+    incidentMedia.forEach(url => {
+      if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Incident Media";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "8px";
+        img.style.margin = "0.5rem 0";
+        incidentDiv.appendChild(img);
+      } else if (url.match(/\.(mp4|webm)$/i)) {
+        const vid = document.createElement("video");
+        vid.src = url;
+        vid.controls = true;
+        vid.style.maxWidth = "100%";
+        vid.style.margin = "0.5rem 0";
+        incidentDiv.appendChild(vid);
+      } else if (url.match(/\.(mp3|wav)$/i)) {
+        const audio = document.createElement("audio");
+        audio.src = url;
+        audio.controls = true;
+        audio.style.display = "block";
+        audio.style.margin = "0.5rem 0";
+        incidentDiv.appendChild(audio);
+      } else if (url.match(/\.pdf$/i)) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.textContent = "View PDF";
+        link.style.display = "block";
+        link.style.margin = "0.5rem 0";
+        incidentDiv.appendChild(link);
+      }
+    });
+  }
+
+  // --- Suspects (name + image) ---
+  const suspectDiv = document.getElementById("suspectMedia");
+  suspectDiv.innerHTML = "";
+  if (Array.isArray(data.suspects) && data.suspects.length > 0) {
+    data.suspects.forEach(person => {
+      const wrapper = document.createElement("div");
+      wrapper.style.marginBottom = "0.8rem";
+      if (person.imageUrl) {
+        const img = document.createElement("img");
+        img.src = person.imageUrl;
+        img.alt = person.name || "Suspect";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "8px";
+        wrapper.appendChild(img);
+      }
+      if (person.name) {
+        const name = document.createElement("div");
+        name.textContent = person.name;
+        name.style.fontWeight = "bold";
+        name.style.marginTop = "4px";
+        wrapper.appendChild(name);
+      }
+      suspectDiv.appendChild(wrapper);
+    });
+  } else if (Array.isArray(data.suspectImageUrls) && data.suspectImageUrls.length) {
+    data.suspectImageUrls.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "Suspect";
+      img.style.maxWidth = "100%";
+      img.style.borderRadius = "8px";
+      suspectDiv.appendChild(img);
+    });
+  }
+
+  // --- Victims (name + image) ---
+  const victimDiv = document.getElementById("victimMedia");
+  victimDiv.innerHTML = "";
+  if (Array.isArray(data.victims) && data.victims.length > 0) {
+    data.victims.forEach(person => {
+      const wrapper = document.createElement("div");
+      wrapper.style.marginBottom = "0.8rem";
+      if (person.imageUrl) {
+        const img = document.createElement("img");
+        img.src = person.imageUrl;
+        img.alt = person.name || "Victim";
+        img.style.maxWidth = "100%";
+        img.style.borderRadius = "8px";
+        wrapper.appendChild(img);
+      }
+      if (person.name) {
+        const name = document.createElement("div");
+        name.textContent = person.name;
+        name.style.fontWeight = "bold";
+        name.style.marginTop = "4px";
+        wrapper.appendChild(name);
+      }
+      victimDiv.appendChild(wrapper);
+    });
+  } else if (Array.isArray(data.victimImageUrls) && data.victimImageUrls.length) {
+    data.victimImageUrls.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "Victim";
+      img.style.maxWidth = "100%";
+      img.style.borderRadius = "8px";
+      victimDiv.appendChild(img);
+    });
+  }
+
+  // GD display (image or PDF)
+  const gdDiv = document.getElementById("gdDisplay");
+  gdDiv.innerHTML = "";
+  if (data.gdUrl) {
+    if (data.gdType === 'image') {
+      const img = document.createElement("img");
+      img.src = data.gdUrl;
+      img.alt = "GD Image";
+      img.style.maxWidth = "100%";
+      img.style.borderRadius = "8px";
+      gdDiv.appendChild(img);
+    } else if (data.gdType === 'pdf') {
+      gdDiv.innerHTML = `
+        <a href="${data.gdUrl}" target="_blank" style="display:inline-block; text-align:center;">
+          <img src="assets/pdf-icon.png" alt="PDF" style="width:48px; margin-bottom:4px;">
+          <div>View GD PDF</div>
+        </a>
+      `;
+    }
+  }
+}
+
+function renderTips(tips = []) {
+  const container = document.getElementById("tipsContainer");
+  container.innerHTML = "";
+
+  tips.forEach(tip => {
+    const div = document.createElement("div");
+    div.className = "tip";
+
+    const upVoted = tip.votedBy?.[currentUser?.uid] === 1;
+    const downVoted = tip.votedBy?.[currentUser?.uid] === -1;
+
+    div.innerHTML = `
+      <p>${tip.text}</p>
+      <p style="font-size: 0.8rem; color: gray;">
+        By ${tip.user || "Anonymous"} • 
+        <span class="vote" onclick="voteTip('${tip.id}', 1)" style="color:${upVoted ? 'green' : '#555'}">▲</span>
+        <span class="vote" onclick="voteTip('${tip.id}', -1)" style="color:${downVoted ? 'red' : '#555'}">▼</span>
+        Votes: ${tip.votes || 0}
+      </p>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function loadTips() {
+  db.collection("reports").doc(reportId).collection("tips").orderBy("timestamp", "desc").get()
+    .then(snapshot => {
+      const tips = snapshot.docs.map(doc => doc.data());
+      renderTips(tips);
+    });
+}
+
+function submitTip() {
+  const text = document.getElementById("tipInput").value.trim();
+  if (!text || !currentUser) return;
+
+  const tip = {
+    text,
+    user: currentUser.email || "Anonymous",
+    timestamp: new Date(),
+    votes: 0,
+    votedBy: { [currentUser.uid]: 0 }
+  };
+
+  db.collection("reports").doc(reportId).collection("tips").add(tip).then(() => {
+    document.getElementById("tipInput").value = "";
+    loadTips();
+  });
+}
+
+function voteTip(tipId, direction) {
+  if (!currentUser || !tipId) return;
+
+  const tipRef = db.collection("reports").doc(reportId).collection("tips").doc(tipId);
+
+  return db.runTransaction(async (tx) => {
+    const doc = await tx.get(tipRef);
+    if (!doc.exists) return;
+
+    const data = doc.data();
+    const votedBy = data.votedBy || {};
+    const previousVote = votedBy[currentUser.uid] || 0;
+
+    // Prevent double voting same direction
+    if (previousVote === direction) return;
+
+    // Calculate new vote count
+    const newVotes = (data.votes || 0) + direction - previousVote;
+
+    // Update Firestore
+    votedBy[currentUser.uid] = direction;
+    tx.update(tipRef, { votes: newVotes, votedBy });
+  }).then(() => {
+    loadTips();
+  }).catch(err => {
+    console.error("Voting failed:", err);
+  });
+}
+
+firebase.auth().onAuthStateChanged(user => {
+  currentUser = user;
+
+  if (!reportId) {
+    alert("Invalid report link");
+    return;
+  }
+
+  db.collection("reports").doc(reportId).get().then(doc => {
+    if (!doc.exists) {
+      alert("Report not found.");
+      return;
+    }
+    renderReport(doc.data());
+    loadTips();
+  });
+});
+</script>
+
+<!-- Add Google Maps script -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+
+</body>
+</html>

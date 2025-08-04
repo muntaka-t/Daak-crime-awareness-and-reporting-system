@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up | Daak</title>
+
+  <link rel="stylesheet" href="assets/style.css" />
+  <link rel="stylesheet" href="assets/style-consistent.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      background: url("assets/images/daak-bg.png") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .signup-card {
+      background: linear-gradient(160deg, rgba(183,28,28,0.6), rgba(27,94,32,0.6));
+      backdrop-filter: blur(20px);
+      padding: 2.5rem;
+      border-radius: 25px;
+      max-width: 420px;
+      width: 100%;
+      color: white;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .signup-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-25deg);
+      transition: 1s ease;
+    }
+
+    .signup-card:hover::before {
+      left: 125%;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    input {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid white;
+      padding: 0.75rem;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .signup-btn {
+      background-color: #2196F3;
+      color: white;
+      padding: 0.8rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .signup-btn:hover {
+      background-color: #1976D2;
+    }
+
+    .form-footer {
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .form-footer a {
+      color: #90caf9;
+      text-decoration: none;
+    }
+
+    .form-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 10px;
+      font-size: 0.8rem;
+      color: #ffffffaa;
+      width: 100%;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="signup-card">
+    <h2>Sign Up</h2>
+
+    <form id="signupForm">
+      <input type="text" id="name" placeholder="Full Name" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit" class="signup-btn">Sign Up</button>
+    </form>
+
+    <div class="form-footer">
+      Already have an account? <a href="login.html">Log in</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    Made with ❤️ by Team Asparagus
+  </div>
+
+  <script src="js/firebase.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

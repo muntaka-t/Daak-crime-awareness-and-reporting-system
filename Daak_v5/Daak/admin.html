@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daak Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="assets/admin.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Firebase compat scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase.js"></script>
+</head>
+<body>
+    <nav class="admin-navbar">
+        <span class="brand">Daak Admin</span>
+        <button id="logoutBtn">Logout</button>
+    </nav>
+    <div class="admin-container">
+        <aside class="admin-sidebar">
+            <ul>
+                <li class="nav-link active" data-section="dashboard">Dashboard</li>
+                <li class="nav-link" data-section="reports">Monitor Reports</li>
+                <li class="nav-link" data-section="accounts">Account Management</li>
+            </ul>
+        </aside>
+        <main id="admin-content" class="admin-main">
+            <!-- Dynamic content loads here -->
+        </main>
+    </div>
+    <div id="access-denied" style="display:none; text-align:center; margin-top:2em;">
+        <h2>Access Denied</h2>
+        <p>You must be an admin to view this page.</p>
+    </div>
+    <!-- Report Details Modal -->
+    <div id="reportModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span id="closeReportModal" class="close">&times;</span>
+        <div id="modalReportContent"></div>
+      </div>
+    </div>
+    <script src="js/admin.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+</body>
+</html>

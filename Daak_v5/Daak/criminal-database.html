@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Criminal Database | Daak</title>
+  <link rel="stylesheet" href="assets/style-consistent.css" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    body {
+      background: url("assets/images/daak-bg.png") no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 0.5rem 5rem 0.5rem;
+    }
+    .db-container {
+      width: 100%;
+      max-width: 700px;
+      margin: auto;
+    }
+    .db-title {
+      color: white;
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+    .search-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      justify-content: center;
+    }
+    .search-bar input, .search-bar select {
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #eee;
+      width: 60%;
+    }
+    .criminal-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .criminal-card {
+      background: linear-gradient(140deg, rgba(183,28,28,0.6), rgba(27,94,32,0.6));
+      backdrop-filter: blur(18px);
+      border-radius: 18px;
+      padding: 1.2rem 1rem;
+      color: white;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      position: relative;
+      transition: box-shadow 0.2s;
+    }
+    .criminal-card:hover {
+      box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+    }
+    .suspect-img {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #fff2;
+      object-fit: cover;
+      border: 2px solid #b71c1c;
+    }
+    .suspect-details {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .suspect-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      word-break: break-all;
+    }
+    .incident-count {
+      background: #b71c1ccc;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      padding: 0.1rem 0.7rem;
+      margin-right: 0.6rem;
+    }
+    .crime-types {
+      font-size: 0.98rem;
+      margin-top: 2px;
+    }
+    .last-seen {
+      font-size: 0.90rem;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+    .view-reports-btn {
+      background: #2196f3;
+      border: none;
+      color: #fff;
+      border-radius: 9px;
+      padding: 0.5rem 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    .reports-modal {
+      position: fixed;
+      left: 0; right: 0; top: 0; bottom: 0;
+      z-index: 1002;
+      background: rgba(0,0,0,0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .reports-modal-content {
+      background: white;
+      color: #222;
+      max-width: 480px;
+      width: 96vw;
+      padding: 2rem 1.2rem 1.2rem 1.2rem;
+      border-radius: 24px;
+      box-shadow: 0 12px 36px #2228;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .close-modal-btn {
+      position: absolute;
+      top: 12px;
+      right: 18px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: #b71c1c;
+      background: none;
+      border: none;
+      font-weight: bold;
+    }
+    /* Modal for enlarged suspect image */
+    .suspect-img-modal {
+      position: fixed;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.87);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1200;
+    }
+    .suspect-img-modal img {
+      max-width: 94vw;
+      max-height: 88vh;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px #000a;
+      border: 5px solid #fff;
+      background: #fff;
+    }
+    .suspect-img-modal .close-modal-btn {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: #fff;
+      font-size: 2.1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      z-index: 1300;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 0.4rem 0.1rem 4rem 0.1rem;
+      }
+      .db-title {
+        font-size: 1.25rem;
+      }
+      .db-container {
+        max-width: 100vw;
+        padding: 0 2vw;
+      }
+      .criminal-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 1rem 0.7rem;
+      }
+      .suspect-img {
+        margin-bottom: 4px;
+      }
+      .reports-modal-content {
+        padding: 1rem 0.5rem 0.7rem 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="db-container">
+    <div class="db-title">Criminal Database</div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search by name, crime, or area..." />
+    </div>
+    <div class="criminal-cards" id="criminalCards"></div>
+  </div>
+  <div class="footer">Made with ❤️ by Team Asparagus</div>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/criminal-database.js"></script>
+</body>
+</html>

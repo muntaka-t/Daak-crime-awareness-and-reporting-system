@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daak - Welcome</title>
+  <link rel="stylesheet" href="assets/style-consistent.css" />
+  <link rel="stylesheet" href="assets/style.css" />
+
+  <!-- Load Bengali font (SolaimanLipi or equivalent fallback) -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background: url("assets/images/daak-bg.png") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .glass-header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .glass-header .header-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.5rem 1rem;
+      margin: 0 0.3rem;
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .glass-header .header-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
+
+    .glass-header .left,
+    .glass-header .right {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-logo {
+      height: 32px;
+      margin: 0 0.5rem;
+    }
+
+    .daak-title {
+      font-family: 'Noto Serif Bengali', serif;
+      font-size: 1.5rem;
+      color: white;
+      font-weight: bold;
+    }
+
+    .card {
+      background: linear-gradient(160deg, rgba(183, 28, 28, 0.4), rgba(27, 94, 32, 0.4));
+      padding: 45px 30px;
+      border-radius: 30px;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(8px);
+      width: 310px;
+      animation: fadeIn 0.9s ease-in-out;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+      margin-top: 5rem; /* space for header */
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -75%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-25deg);
+      transition: 1.0s ease;
+    }
+
+    .card:hover::before {
+      left: 125%;
+    }
+
+    .logo {
+      width: 65px;
+      margin-bottom: 10px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: white;
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      font-family: 'Noto Serif Bengali', serif;
+    }
+
+    p {
+      font-size: 0.92rem;
+      color: #f1f1f1;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: 0.25s ease;
+    }
+
+    .btn.login {
+      background-color: #000;
+      color: white;
+    }
+
+    .btn.login:hover {
+      background-color: #222;
+      box-shadow: 0 0 10px #ffffffaa;
+    }
+
+    .btn.signup {
+      background-color: white;
+      color: #000;
+    }
+
+    .btn.signup:hover {
+      background-color: #f0f0f0;
+      box-shadow: 0 0 10px #ffffff88;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.8rem;
+      color: #ffffffaa;
+      text-align: center;
+      width: 100%;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 500px) {
+      .card {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="glass-header">
+    <div class="left">
+      <button onclick="history.back()" class="header-btn">← Back</button>
+      <img src="assets/images/logo.png" alt="Daak Logo" class="header-logo" />
+      <span class="daak-title">ডাক</span>
+    </div>
+    <div class="right">
+      <a href="signup.html" class="header-btn">Sign Up</a>
+    </div>
+  </header>
+
+  <div class="card">
+    <img src="assets/images/logo.png" alt="Daak Logo" class="logo" />
+    <h1>ডাক</h1>
+    <p>When nobody hears, we do.</p>
+
+    <button class="btn login" onclick="location.href='login.html'">Login</button>
+    <button class="btn signup" onclick="location.href='signup.html'">Sign Up</button>
+  </div>
+
+  <div class="footer">
+    Made with ❤️ by "Team Asparagus"
+  </div>
+
+</body>
+</html>

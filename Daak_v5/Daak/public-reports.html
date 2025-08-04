@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Public Reports | Daak</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #004aad;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    #filters {
+      display: flex;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    select, input {
+      padding: 0.4rem;
+      font-size: 0.9rem;
+    }
+    #chart-container {
+      padding: 0.5rem;
+      background: white;
+      margin: 1rem;
+      border-radius: 10px;
+    }
+    #stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .stat-tile {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .reports-list {
+      padding: 1rem;
+    }
+    .report-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        cursor: pointer;
+        transition: box-shadow 0.2s ease;
+    }
+    .report-card:hover {
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      border-radius: 5px;
+      background: #ddd;
+      color: #333;
+    }
+    img.thumb {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>☰ Public Reports</h1>
+  <span>🔔</span>
+</header>
+
+<div id="filters">
+  <input type="text" id="searchInput" placeholder="Search by area, type or keyword" />
+  <select id="crimeFilter">
+    <option value="all">All Crimes</option>
+    <option value="Robbery">Robbery</option>
+    <option value="Theft">Theft</option>
+    <option value="Assault">Assault</option>
+    <option value="Harassment">Harassment</option>
+    <option value="Murder">Murder</option>
+  </select>
+  <select id="sortBy">
+    <option value="recent">Most Recent</option>
+    <option value="region">By Region</option>
+  </select>
+</div>
+
+<div id="chart-container">
+  <canvas id="crimeChart" height="80"></canvas>
+</div>
+
+<div id="stats" class="stats-grid">
+  <!-- Stats will load here -->
+</div>
+
+<div class="reports-list" id="reportList">
+  <!-- Report cards go here -->
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const db = firebase.firestore();
+let allReports = [];
+
+function formatDate(date) {
+  const d = new Date(date);
+  return d.toLocaleString();
+}
+
+function loadReports() {
+  db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+    allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderReports(allReports);
+    renderStats(allReports);
+    renderChart(allReports);
+  });
+}
+
+function renderReports(reports) {
+  const container = document.getElementById('reportList');
+  container.innerHTML = "";
+
+  reports.forEach(report => {
+    const div = document.createElement('div');
+    div.className = "report-card";
+
+    const media = report.mediaUrl
+      ? `<img class="thumb" src="${report.mediaUrl}" alt="media" />`
+      : "";
+
+    const reporter = report.isAnonymous ? "Anonymous" : (report.reporterName || "User");
+
+    div.innerHTML = `
+      <h3><span class="tag">${report.crimeType}</span></h3>
+      <p><strong>Location:</strong> ${report.region || "Unknown"}</p>
+      <p><strong>Date & Time:</strong> ${formatDate(report.timestamp?.seconds * 1000)}</p>
+      <p><strong>Reporter:</strong> ${reporter}</p>
+      ${media}
+    `;
+
+    // ✅ Make the entire card clickable
+    div.addEventListener("click", () => {
+      window.location.href = `report-detail.html?id=${report.id}`;
+    });
+
+    container.appendChild(div);
+  });
+}
+
+
+function renderStats(reports) {
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const lastMonth = (thisMonth + 11) % 12;
+  const currentYear = now.getFullYear();
+
+  const counts = {};
+  const trends = {};
+
+  reports.forEach(r => {
+    const ts = new Date(r.timestamp?.seconds * 1000);
+    const type = r.crimeType;
+    if (!type || isNaN(ts)) return;
+
+    if (!counts[type]) counts[type] = { current: 0, previous: 0 };
+
+    if (ts.getMonth() === thisMonth && ts.getFullYear() === currentYear) {
+      counts[type].current++;
+    } else if (ts.getMonth() === lastMonth && ts.getFullYear() === currentYear) {
+      counts[type].previous++;
+    }
+  });
+
+  const container = document.getElementById("stats");
+  container.innerHTML = "";
+
+  Object.entries(counts).forEach(([type, data]) => {
+    const change = data.previous === 0 ? data.current * 100 : ((data.current - data.previous) / data.previous) * 100;
+    const div = document.createElement('div');
+    div.className = "stat-tile";
+    div.innerHTML = `
+      <h4>${type}</h4>
+      <p>${data.current} this month</p>
+      <p style="color: ${change >= 0 ? 'green' : 'red'};">
+        ${change >= 0 ? '+' : ''}${change.toFixed(1)}%
+      </p>
+    `;
+    container.appendChild(div);
+  });
+}
+
+
+function renderChart(reports) {
+  
+  
+  const ctx = document.getElementById('crimeChart').getContext('2d');
+  const now = new Date();
+  const months = [];
+
+  // Create month labels: last 6 months
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      label: d.toLocaleString('default', { month: 'short' }),
+      year: d.getFullYear(),
+      month: d.getMonth()
+    });
+  }
+
+  const grouped = {};
+
+  reports.forEach(r => {
+    if (!r.timestamp || !r.crimeType) return;
+
+    const ts = new Date(r.timestamp.seconds * 1000);
+    const type = r.crimeType;
+
+    for (let i = 0; i < months.length; i++) {
+      const { year, month } = months[i];
+      if (ts.getFullYear() === year && ts.getMonth() === month) {
+        if (!grouped[type]) grouped[type] = new Array(6).fill(0);
+        grouped[type][i]++;
+        break;
+      }
+    }
+  });
+
+  const datasets = Object.entries(grouped).map(([type, data]) => ({
+    label: type,
+    data,
+    fill: true,
+    tension: 0.3
+  }));
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months.map(m => m.label),
+      datasets
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+}
+
+
+function applyFilters() {
+  const type = document.getElementById('crimeFilter').value;
+  const keyword = document.getElementById('searchInput').value.toLowerCase();
+  const sortBy = document.getElementById('sortBy').value;
+
+  let filtered = allReports.filter(r => {
+    const matchType = type === 'all' || r.crimeType === type;
+    const matchSearch =
+      r.description?.toLowerCase().includes(keyword) ||
+      r.region?.toLowerCase().includes(keyword);
+    return matchType && matchSearch;
+  });
+
+  if (sortBy === 'region') {
+    filtered.sort((a, b) => (a.region || "").localeCompare(b.region || ""));
+  }
+
+  renderReports(filtered);
+}
+
+document.getElementById('crimeFilter').addEventListener('change', applyFilters);
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('sortBy').addEventListener('change', applyFilters);
+
+loadReports();
+</script>
+
+</body>
+</html>

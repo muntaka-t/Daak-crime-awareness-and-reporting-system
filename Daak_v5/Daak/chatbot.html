@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daak Chatbot Assistant</title>
+
+  <!-- Chatbot UI Styles -->
+  <link rel="stylesheet" href="assets/chatbot.css" />
+</head>
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+<body>
+  <div class="chatbot-container">
+    <header class="chatbot-header">
+      <h2>🧠 Daak Safety Assistant</h2>
+    </header>
+
+    <div class="chatbot-messages" id="chatMessages">
+      <div class="bot-message">
+Hi! I’m your safety assistant. How can I help you today?
+      </div>
+    </div>
+
+    <form class="chatbot-input-area" id="chatForm">
+      <input 
+        type="text" 
+        id="chatInput" 
+        placeholder="Ask something like: What to do in a robbery?" 
+        autocomplete="off" 
+        required 
+      />
+      <button type="submit">➤</button>
+    </form>
+  </div>
+
+  <!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<!-- Firebase config -->
+<script src="js/firebase.js"></script>
+
+  <!-- Chatbot JS Logic -->
+  <script src="js/chatbot.js"></script>
+</body>
+</html>
